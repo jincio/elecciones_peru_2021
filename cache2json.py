@@ -15,16 +15,21 @@ class Cache2Json:
 
         for election_dir in election_dirs:
             election_name = election_dir.name
+            if election_name == "onpe_pcm":
+                logging.info("Caso especial de open data de ONPE. Skip.")
+                continue
             logging.info(f"Procesando elección {election_name}")
             self.data[election_name] = data = {
                 "geo_regions": {},
                 "ubigeos": {},
                 "mesas": {},
-                "locales": defaultdict(dict)
+                "locales": defaultdict(dict),
             }
             logging.info("Procesando actas")
             for json_file in (election_dir / "mesas/actas/11/").glob("**/*.json"):
-                data["locales"][json_file.parent.stem][json_file.stem] = json.loads(json_file.read_text())
+                data["locales"][json_file.parent.stem][json_file.stem] = json.loads(
+                    json_file.read_text()
+                )
             logging.info("Procesando ubigeos")
             for json_file in (election_dir / "ecp/ubigeos").glob("*.json"):
                 data["geo_regions"][json_file.stem] = json.loads(json_file.read_text())
@@ -36,7 +41,8 @@ class Cache2Json:
                 data["mesas"][json_file.stem] = json.loads(json_file.read_text())
         data_file = self.base_dir / "data.json"
         logging.info(f"Ronderos guardando data en {data_file}")
-        data_file.write_text(json.dumps(self.data, sort_keys=True, indent=4))
+        with open(data_file, "w", newline="\n") as f:
+            json.dump(self.data, f, sort_keys=True, indent=4)
 
 
 def main():
